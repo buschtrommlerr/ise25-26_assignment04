@@ -64,10 +64,37 @@ Create a POS based on a JSON object provided in the request body:
 curl --header "Content-Type: application/json" --request POST --data '{"name":"New Café","description":"Description","type":"CAFE","campus":"ALTSTADT","street":"Hauptstraße","houseNumber":"100","postalCode":69117,"city":"Heidelberg"}' http://localhost:8080/api/pos
 ```
 
+#### Import POS from OpenStreetMap
+
 Create a POS based on an OpenStreetMap node:
 
 ```shell
-curl --request POST http://localhost:8080/api/pos/import/osm/5589879349 # set a valid OSM node ID here
+curl --request POST http://localhost:8080/api/pos/import/osm/5589879349
+```
+
+- Success (201 Created): Location header points to `/api/pos/{id}` and JSON representation is returned
+- Not found (404): if the OSM node does not exist
+- Bad request (400): if the OSM node misses required fields (e.g., name, address)
+- Bad gateway (502): if the external OSM service fails or returns invalid XML
+- Conflict (409): if a POS with the same name already exists (general uniqueness rule)
+
+Idempotency:
+- If a POS was already imported from the same `osmNodeId`, the endpoint returns 201 with the existing POS (same representation). The `osmNodeId` is stored internally to avoid duplicate imports.
+
+Example success response (truncated):
+
+```json
+{
+  "id": 1,
+  "name": "Rada Coffee & Rösterei",
+  "description": "Imported from OSM node 5589879349",
+  "type": "CAFE",
+  "campus": "ALTSTADT",
+  "street": "Untere Straße",
+  "houseNumber": "21",
+  "postalCode": 69117,
+  "city": "Heidelberg"
+}
 ```
 
 #### Update POS
