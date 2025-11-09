@@ -3,10 +3,10 @@ package de.seuhd.campuscoffee.domain.impl;
 import de.seuhd.campuscoffee.domain.exceptions.DuplicatePosNameException;
 import de.seuhd.campuscoffee.domain.exceptions.OsmNodeMissingFieldsException;
 import de.seuhd.campuscoffee.domain.exceptions.OsmNodeNotFoundException;
+import de.seuhd.campuscoffee.domain.exceptions.PosNotFoundException;
 import de.seuhd.campuscoffee.domain.model.CampusType;
 import de.seuhd.campuscoffee.domain.model.OsmNode;
 import de.seuhd.campuscoffee.domain.model.Pos;
-import de.seuhd.campuscoffee.domain.exceptions.PosNotFoundException;
 import de.seuhd.campuscoffee.domain.model.PosType;
 import de.seuhd.campuscoffee.domain.ports.OsmDataService;
 import de.seuhd.campuscoffee.domain.ports.PosDataService;
@@ -17,6 +17,8 @@ import org.jspecify.annotations.NonNull;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 
 /**
@@ -81,23 +83,76 @@ public class PosServiceImpl implements PosService {
 
     /**
      * Converts an OSM node to a POS domain object.
-     * Note: This is a stub implementation and should be replaced with real mapping logic.
+     * This implementation maps OSM tags to POS fields with validations and type mapping.
      */
     private @NonNull Pos convertOsmNodeToPos(@NonNull OsmNode osmNode) {
-        if (osmNode.nodeId().equals(5589879349L)) {
-            return Pos.builder()
-                    .name("Rada Coffee & Rösterei")
-                    .description("Caffé und Rösterei")
-                    .type(PosType.CAFE)
-                    .campus(CampusType.ALTSTADT)
-                    .street("Untere Straße")
-                    .houseNumber("21")
-                    .postalCode(69117)
-                    .city("Heidelberg")
-                    .build();
-        } else {
+        Map<String, String> tags = osmNode.tags();
+
+        // Name (prefer name:de, fallback name)
+        String name = firstNonBlank(tags.get("name:de"), tags.get("name"));
+        if (isBlank(name)) {
             throw new OsmNodeMissingFieldsException(osmNode.nodeId());
         }
+
+        // Beschreibung optional
+        String description = firstNonBlank(tags.get("description"), tags.get("note"), "Imported from OSM node " + osmNode.nodeId());
+
+        // Adresse
+        String street = tags.get("addr:street");
+        String houseNumberRaw = tags.get("addr:housenumber");
+        String postalCodeRaw = tags.get("addr:postcode");
+        String city = tags.get("addr:city");
+
+        if (isBlank(street) || isBlank(houseNumberRaw) || isBlank(postalCodeRaw) || isBlank(city)) {
+            throw new OsmNodeMissingFieldsException(osmNode.nodeId());
+        }
+
+        Integer postalCode;
+        try {
+            postalCode = Integer.parseInt(postalCodeRaw.trim());
+        } catch (NumberFormatException e) {
+            throw new OsmNodeMissingFieldsException(osmNode.nodeId());
+        }
+
+        // Typ ermitteln aus amenity oder shop
+        PosType type = mapType(tags.get("amenity"), tags.get("shop"));
+
+        // Campus heuristisch: hier nicht ableitbar -> Default ALTSTADT (Minimalinvasiv, könnte zukünftig verbessert werden)
+        CampusType campus = CampusType.ALTSTADT;
+
+        return Pos.builder()
+                .name(name.trim())
+                .description(description.trim())
+                .type(type)
+                .campus(campus)
+                .street(street.trim())
+                .houseNumber(houseNumberRaw.trim())
+                .postalCode(postalCode)
+                .city(city.trim())
+                .build();
+    }
+
+    private PosType mapType(String amenity, String shop) {
+        String source = firstNonBlank(amenity, shop, "");
+        if (isBlank(source)) return PosType.OTHER;
+        source = source.toLowerCase(Locale.ROOT);
+        return switch (source) {
+            case "cafe" -> PosType.CAFE;
+            case "vending_machine" -> PosType.VENDING_MACHINE;
+            case "bakery" -> PosType.BAKERY;
+            case "cafeteria", "canteen" -> PosType.CAFETERIA;
+            default -> PosType.OTHER;
+        };
+    }
+
+    private static boolean isBlank(String s) { return s == null || s.trim().isEmpty(); }
+
+    private static String firstNonBlank(String... values) {
+        if (values == null) return null;
+        for (String v : values) {
+            if (!isBlank(v)) return v;
+        }
+        return null;
     }
 
     /**

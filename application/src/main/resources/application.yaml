@@ -17,6 +17,9 @@ server:
     whitelabel:
       enabled: false
 
+osm:
+  base-url: https://www.openstreetmap.org
+
 ---
 spring:
   config:

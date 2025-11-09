@@ -80,6 +80,25 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * Handles upstream errors from external OSM service.
+     * Returns HTTP 502 (Bad Gateway).
+     *
+     * @param exception the upstream exception that was thrown
+     * @param request the web request
+     * @return ResponseEntity with ErrorResponse and HTTP 502
+     */
+    @ExceptionHandler({
+            OsmUpstreamException.class
+    })
+    public ResponseEntity<ErrorResponse> handleUpstreamException(
+            RuntimeException exception,
+            WebRequest request
+    ) {
+        log.warn("Upstream error: {}", exception.getMessage());
+        return buildErrorResponse(exception, HttpStatus.BAD_GATEWAY, request);
+    }
+
+    /**
      * Fallback handler for unexpected exceptions.
      * Returns HTTP 500 (Internal Server Error).
      *

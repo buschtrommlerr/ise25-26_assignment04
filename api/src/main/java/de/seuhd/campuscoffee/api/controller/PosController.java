@@ -54,8 +54,14 @@ public class PosController {
         PosDto created = posDtoMapper.fromDomain(
                 posService.importFromOsmNode(nodeId)
         );
+        // Build Location to canonical resource URL /api/pos/{id}
+        URI location = ServletUriComponentsBuilder
+                .fromCurrentContextPath()
+                .path("/api/pos/{id}")
+                .buildAndExpand(created.id())
+                .toUri();
         return ResponseEntity
-                .created(getLocation(created.id()))
+                .created(location)
                 .body(created);
     }
 
