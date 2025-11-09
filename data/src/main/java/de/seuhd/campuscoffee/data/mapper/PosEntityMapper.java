@@ -39,6 +39,8 @@ public interface PosEntityMapper {
     @Mapping(source = "address.postalCode", target = "postalCode")
     @Mapping(source = "address.city", target = "city")
     @Mapping(target = "houseNumber", expression = "java(mergeHouseNumber(source))")
+    // map osmNodeId
+    @Mapping(source = "osmNodeId", target = "osmNodeId")
     Pos fromEntity(PosEntity source);
 
     /**
@@ -49,6 +51,8 @@ public interface PosEntityMapper {
      * @return the JPA entity, or null if source is null
      */
     @Mapping(target = "address", expression = "java(splitHouseNumber(source, new AddressEntity()))")
+    // map osmNodeId
+    @Mapping(source = "osmNodeId", target = "osmNodeId")
     PosEntity toEntity(Pos source);
 
     /**
@@ -64,6 +68,8 @@ public interface PosEntityMapper {
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "address", expression = "java(splitHouseNumber(source, target.getAddress()))")
+    // map osmNodeId as updatable
+    @Mapping(source = "osmNodeId", target = "osmNodeId")
     void updateEntity(Pos source, @MappingTarget PosEntity target);
 
     /**

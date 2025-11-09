@@ -43,6 +43,9 @@ public class PosEntity {
     @Embedded
     private AddressEntity address;
 
+    @Column(name = "osm_node_id", unique = true)
+    private Long osmNodeId;
+
     /**
      * JPA lifecycle callback: set timestamps before persisting a new entity.
      * This ensures timestamps reflect actual database operation time.

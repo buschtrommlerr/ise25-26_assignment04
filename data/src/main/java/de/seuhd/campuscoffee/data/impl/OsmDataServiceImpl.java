@@ -5,12 +5,16 @@ import de.seuhd.campuscoffee.domain.model.OsmNode;
 import de.seuhd.campuscoffee.domain.ports.OsmDataService;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.stereotype.Service;
+
+import java.util.Map;
 
 /**
  * OSM import service.
  */
 @Service
+@ConditionalOnMissingBean(OsmDataService.class)
 @Slf4j
 class OsmDataServiceImpl implements OsmDataService {
 
@@ -23,6 +27,9 @@ class OsmDataServiceImpl implements OsmDataService {
         if (nodeId.equals(5589879349L)) {
             return OsmNode.builder()
                     .nodeId(nodeId)
+                    .lat(49.41)
+                    .lon(8.70)
+                    .tags(Map.of())
                     .build();
         } else {
             // For any other node ID, throw not found exception

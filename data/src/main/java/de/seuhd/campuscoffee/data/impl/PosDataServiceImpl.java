@@ -13,6 +13,7 @@ import org.jspecify.annotations.NonNull;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Implementation of the POS data service that the domain layer provides as a port.
@@ -75,6 +76,11 @@ class PosDataServiceImpl implements PosDataService {
             // Re-throw if it's a different constraint violation
             throw e;
         }
+    }
+
+    @Override
+    public @NonNull Optional<Pos> findByOsmNodeId(@NonNull Long osmNodeId) {
+        return posRepository.findByOsmNodeId(osmNodeId).map(posEntityMapper::fromEntity);
     }
 
     /**

@@ -5,6 +5,7 @@ import de.seuhd.campuscoffee.domain.exceptions.PosNotFoundException;
 import org.jspecify.annotations.NonNull;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Port interface for POS data operations.
@@ -47,4 +48,9 @@ public interface PosDataService {
      * @throws PosNotFoundException if attempting to update a POS that does not exist
      */
     @NonNull Pos upsert(@NonNull Pos pos) throws PosNotFoundException;
+
+    /**
+     * Finds a POS by its source OSM node ID.
+     */
+    @NonNull Optional<Pos> findByOsmNodeId(@NonNull Long osmNodeId);
 }

@@ -69,13 +69,18 @@ public class PosServiceImpl implements PosService {
     @Override
     public @NonNull Pos importFromOsmNode(@NonNull Long nodeId) throws OsmNodeNotFoundException {
         log.info("Importing POS from OpenStreetMap node {}...", nodeId);
-
+        // Idempotenz: existierender Eintrag mit osmNodeId zurückgeben
+        var existing = posDataService.findByOsmNodeId(nodeId);
+        if (existing.isPresent()) {
+            log.info("POS already imported from node {} (id={}), returning existing.", nodeId, existing.get().id());
+            return existing.get();
+        }
         // Fetch the OSM node data using the port
         OsmNode osmNode = osmDataService.fetchNode(nodeId);
 
         // Convert OSM node to POS domain object and upsert it
-        // TODO: Implement the actual conversion (the response is currently hard-coded).
-        Pos savedPos = upsert(convertOsmNodeToPos(osmNode));
+        Pos mapped = convertOsmNodeToPos(osmNode).toBuilder().osmNodeId(nodeId).build();
+        Pos savedPos = upsert(mapped);
         log.info("Successfully imported POS '{}' from OSM node {}", savedPos.name(), nodeId);
 
         return savedPos;

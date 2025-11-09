@@ -169,4 +169,25 @@ public class PosOsmImportSystemTests extends AbstractSysTest {
         assertThat(created.type()).isEqualTo(PosType.OTHER);
     }
 
+    @Test
+    void importFromOsm_Idempotent_ReturnsSamePos() {
+        PosDto first = given()
+                .contentType(ContentType.JSON)
+                .when()
+                .post("/api/pos/import/osm/{nodeId}", NODE_OK)
+                .then()
+                .statusCode(201)
+                .extract().as(PosDto.class);
+
+        PosDto second = given()
+                .contentType(ContentType.JSON)
+                .when()
+                .post("/api/pos/import/osm/{nodeId}", NODE_OK)
+                .then()
+                .statusCode(201)
+                .extract().as(PosDto.class);
+
+        assertThat(second.id()).isEqualTo(first.id());
+        assertThat(second).usingRecursiveComparison().ignoringFields("createdAt", "updatedAt").isEqualTo(first);
+    }
 }
